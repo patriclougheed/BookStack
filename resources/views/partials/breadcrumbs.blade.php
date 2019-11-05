@@ -1,8 +1,8 @@
-<div class="breadcrumbs text-center">
+<nav class="breadcrumbs text-center" aria-label="{{ trans('common.breadcrumb') }}">
     <?php $breadcrumbCount = 0; ?>
 
     {{-- Show top level books item --}}
-    @if (count($crumbs) > 0 && array_first($crumbs) instanceof  \BookStack\Entities\Book)
+    @if (count($crumbs) > 0 && ($crumbs[0] ?? null) instanceof  \BookStack\Entities\Book)
         <a href="{{  url('/books')  }}" class="text-book icon-list-item outline-hover">
             <span>@icon('books')</span>
             <span>{{ trans('entities.books') }}</span>
@@ -11,7 +11,7 @@
     @endif
 
     {{-- Show top level shelves item --}}
-    @if (count($crumbs) > 0 && array_first($crumbs) instanceof  \BookStack\Entities\Bookshelf)
+    @if (count($crumbs) > 0 && ($crumbs[0] ?? null) instanceof  \BookStack\Entities\Bookshelf)
         <a href="{{  url('/shelves')  }}" class="text-bookshelf icon-list-item outline-hover">
             <span>@icon('bookshelf')</span>
             <span>{{ trans('entities.shelves') }}</span>
@@ -51,4 +51,4 @@
         @endif
         <?php $breadcrumbCount++; ?>
     @endforeach
-</div>
+</nav>

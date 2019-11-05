@@ -7,7 +7,7 @@
         <div class="my-l">&nbsp;</div>
 
         <div class="card content-wrap auto-height">
-            <h1 class="list-heading">{{ title_case(trans('auth.log_in')) }}</h1>
+            <h1 class="list-heading">{{ Str::title(trans('auth.log_in')) }}</h1>
 
             <form action="{{ url('/login') }}" method="POST" id="login-form" class="mt-l">
                 {!! csrf_field() !!}
@@ -22,13 +22,12 @@
                             'name' => 'remember',
                             'checked' => false,
                             'value' => 'on',
-                            'tabindex' => 1,
                             'label' => trans('auth.remember_me'),
                         ])
                     </div>
 
                     <div class="text-right">
-                        <button class="button primary" tabindex="1">{{ title_case(trans('auth.log_in')) }}</button>
+                        <button class="button">{{ Str::title(trans('auth.log_in')) }}</button>
                     </div>
                 </div>
 

@@ -18,7 +18,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Redirector;
-use Illuminate\View\View;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Contracts\User as SocialUser;
 use Validator;
 
@@ -53,7 +54,7 @@ class RegisterController extends Controller
      * Create a new controller instance.
      *
      * @param SocialAuthService $socialAuthService
-     * @param \BookStack\Auth\EmailConfirmationService $emailConfirmationService
+     * @param EmailConfirmationService $emailConfirmationService
      * @param UserRepo $userRepo
      */
     public function __construct(SocialAuthService $socialAuthService, EmailConfirmationService $emailConfirmationService, UserRepo $userRepo)
@@ -78,7 +79,7 @@ class RegisterController extends Controller
         return Validator::make($data, [
             'name' => 'required|min:2|max:255',
             'email' => 'required|email|max:255|unique:users',
-            'password' => 'required|min:6',
+            'password' => 'required|min:8',
         ]);
     }
 
@@ -130,7 +131,7 @@ class RegisterController extends Controller
         return User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => bcrypt($data['password']),
+            'password' => Hash::make($data['password']),
         ]);
     }
 
@@ -159,81 +160,21 @@ class RegisterController extends Controller
             $newUser->socialAccounts()->save($socialAccount);
         }
 
-        if ((setting('registration-confirmation') || $registrationRestrict) && !$emailVerified) {
+        if ($this->emailConfirmationService->confirmationRequired() && !$emailVerified) {
             $newUser->save();
 
             try {
                 $this->emailConfirmationService->sendConfirmation($newUser);
             } catch (Exception $e) {
-                session()->flash('error', trans('auth.email_confirm_send_error'));
+                $this->showErrorNotification(trans('auth.email_confirm_send_error'));
             }
 
             return redirect('/register/confirm');
         }
 
         auth()->login($newUser);
-        session()->flash('success', trans('auth.register_success'));
+        $this->showSuccessNotification(trans('auth.register_success'));
         return redirect($this->redirectPath());
-    }
-
-    /**
-     * Show the page to tell the user to check their email
-     * and confirm their address.
-     */
-    public function getRegisterConfirmation()
-    {
-        return view('auth.register-confirm');
-    }
-
-    /**
-     * Confirms an email via a token and logs the user into the system.
-     * @param $token
-     * @return RedirectResponse|Redirector
-     * @throws UserRegistrationException
-     */
-    public function confirmEmail($token)
-    {
-        $confirmation = $this->emailConfirmationService->getEmailConfirmationFromToken($token);
-        $user = $confirmation->user;
-        $user->email_confirmed = true;
-        $user->save();
-        auth()->login($user);
-        session()->flash('success', trans('auth.email_confirm_success'));
-        $this->emailConfirmationService->deleteConfirmationsByUser($user);
-        return redirect($this->redirectPath);
-    }
-
-    /**
-     * Shows a notice that a user's email address has not been confirmed,
-     * Also has the option to re-send the confirmation email.
-     * @return View
-     */
-    public function showAwaitingConfirmation()
-    {
-        return view('auth.user-unconfirmed');
-    }
-
-    /**
-     * Resend the confirmation email
-     * @param Request $request
-     * @return View
-     */
-    public function resendConfirmation(Request $request)
-    {
-        $this->validate($request, [
-            'email' => 'required|email|exists:users,email'
-        ]);
-        $user = $this->userRepo->getByEmail($request->get('email'));
-
-        try {
-            $this->emailConfirmationService->sendConfirmation($user);
-        } catch (Exception $e) {
-            session()->flash('error', trans('auth.email_confirm_send_error'));
-            return redirect('/register/confirm');
-        }
-
-        session()->flash('success', trans('auth.email_confirm_resent'));
-        return redirect('/register/confirm');
     }
 
     /**
@@ -252,14 +193,14 @@ class RegisterController extends Controller
 
     /**
      * The callback for social login services.
-     * @param $socialDriver
      * @param Request $request
+     * @param string $socialDriver
      * @return RedirectResponse|Redirector
      * @throws SocialSignInException
      * @throws UserRegistrationException
      * @throws SocialDriverNotConfigured
      */
-    public function socialCallback($socialDriver, Request $request)
+    public function socialCallback(Request $request, string $socialDriver)
     {
         if (!session()->has('social-callback')) {
             throw new SocialSignInException(trans('errors.social_no_action_defined'), '/login');
@@ -322,7 +263,7 @@ class RegisterController extends Controller
         $userData = [
             'name' => $socialUser->getName(),
             'email' => $socialUser->getEmail(),
-            'password' => str_random(30)
+            'password' => Str::random(30)
         ];
         return $this->registerUser($userData, $socialAccount, $emailVerified);
     }

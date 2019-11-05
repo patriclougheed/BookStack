@@ -9,9 +9,7 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/uploads/images/{path}', 'Images\ImageController@showImage')
         ->where('path', '.*$');
 
-    Route::group(['prefix' => 'pages'], function() {
-        Route::get('/recently-updated', 'PageController@showRecentlyUpdated');
-    });
+    Route::get('/pages/recently-updated', 'PageController@showRecentlyUpdated');
 
     // Shelves
     Route::get('/create-shelf', 'BookshelfController@create');
@@ -40,16 +38,16 @@ Route::group(['middleware' => 'auth'], function () {
         Route::get('/{slug}/edit', 'BookController@edit');
         Route::put('/{slug}', 'BookController@update');
         Route::delete('/{id}', 'BookController@destroy');
-        Route::get('/{slug}/sort-item', 'BookController@getSortItem');
+        Route::get('/{slug}/sort-item', 'BookSortController@showItem');
         Route::get('/{slug}', 'BookController@show');
         Route::get('/{bookSlug}/permissions', 'BookController@showPermissions');
         Route::put('/{bookSlug}/permissions', 'BookController@permissions');
         Route::get('/{slug}/delete', 'BookController@showDelete');
-        Route::get('/{bookSlug}/sort', 'BookController@sort');
-        Route::put('/{bookSlug}/sort', 'BookController@saveSort');
-        Route::get('/{bookSlug}/export/html', 'BookController@exportHtml');
-        Route::get('/{bookSlug}/export/pdf', 'BookController@exportPdf');
-        Route::get('/{bookSlug}/export/plaintext', 'BookController@exportPlainText');
+        Route::get('/{bookSlug}/sort', 'BookSortController@show');
+        Route::put('/{bookSlug}/sort', 'BookSortController@update');
+        Route::get('/{bookSlug}/export/html', 'BookExportController@html');
+        Route::get('/{bookSlug}/export/pdf', 'BookExportController@pdf');
+        Route::get('/{bookSlug}/export/plaintext', 'BookExportController@plainText');
 
         // Pages
         Route::get('/{bookSlug}/create-page', 'PageController@create');
@@ -57,9 +55,9 @@ Route::group(['middleware' => 'auth'], function () {
         Route::get('/{bookSlug}/draft/{pageId}', 'PageController@editDraft');
         Route::post('/{bookSlug}/draft/{pageId}', 'PageController@store');
         Route::get('/{bookSlug}/page/{pageSlug}', 'PageController@show');
-        Route::get('/{bookSlug}/page/{pageSlug}/export/pdf', 'PageController@exportPdf');
-        Route::get('/{bookSlug}/page/{pageSlug}/export/html', 'PageController@exportHtml');
-        Route::get('/{bookSlug}/page/{pageSlug}/export/plaintext', 'PageController@exportPlainText');
+        Route::get('/{bookSlug}/page/{pageSlug}/export/pdf', 'PageExportController@pdf');
+        Route::get('/{bookSlug}/page/{pageSlug}/export/html', 'PageExportController@html');
+        Route::get('/{bookSlug}/page/{pageSlug}/export/plaintext', 'PageExportController@plainText');
         Route::get('/{bookSlug}/page/{pageSlug}/edit', 'PageController@edit');
         Route::get('/{bookSlug}/page/{pageSlug}/move', 'PageController@showMove');
         Route::put('/{bookSlug}/page/{pageSlug}/move', 'PageController@move');
@@ -74,11 +72,11 @@ Route::group(['middleware' => 'auth'], function () {
         Route::delete('/{bookSlug}/draft/{pageId}', 'PageController@destroyDraft');
 
         // Revisions
-        Route::get('/{bookSlug}/page/{pageSlug}/revisions', 'PageController@showRevisions');
-        Route::get('/{bookSlug}/page/{pageSlug}/revisions/{revId}', 'PageController@showRevision');
-        Route::get('/{bookSlug}/page/{pageSlug}/revisions/{revId}/changes', 'PageController@showRevisionChanges');
-        Route::put('/{bookSlug}/page/{pageSlug}/revisions/{revId}/restore', 'PageController@restoreRevision');
-        Route::delete('/{bookSlug}/page/{pageSlug}/revisions/{revId}/delete', 'PageController@destroyRevision');
+        Route::get('/{bookSlug}/page/{pageSlug}/revisions', 'PageRevisionController@index');
+        Route::get('/{bookSlug}/page/{pageSlug}/revisions/{revId}', 'PageRevisionController@show');
+        Route::get('/{bookSlug}/page/{pageSlug}/revisions/{revId}/changes', 'PageRevisionController@changes');
+        Route::put('/{bookSlug}/page/{pageSlug}/revisions/{revId}/restore', 'PageRevisionController@restore');
+        Route::delete('/{bookSlug}/page/{pageSlug}/revisions/{revId}/delete', 'PageRevisionController@destroy');
 
         // Chapters
         Route::get('/{bookSlug}/chapter/{chapterSlug}/create-page', 'PageController@create');
@@ -91,9 +89,9 @@ Route::group(['middleware' => 'auth'], function () {
         Route::put('/{bookSlug}/chapter/{chapterSlug}/move', 'ChapterController@move');
         Route::get('/{bookSlug}/chapter/{chapterSlug}/edit', 'ChapterController@edit');
         Route::get('/{bookSlug}/chapter/{chapterSlug}/permissions', 'ChapterController@showPermissions');
-        Route::get('/{bookSlug}/chapter/{chapterSlug}/export/pdf', 'ChapterController@exportPdf');
-        Route::get('/{bookSlug}/chapter/{chapterSlug}/export/html', 'ChapterController@exportHtml');
-        Route::get('/{bookSlug}/chapter/{chapterSlug}/export/plaintext', 'ChapterController@exportPlainText');
+        Route::get('/{bookSlug}/chapter/{chapterSlug}/export/pdf', 'ChapterExportController@pdf');
+        Route::get('/{bookSlug}/chapter/{chapterSlug}/export/html', 'ChapterExportController@html');
+        Route::get('/{bookSlug}/chapter/{chapterSlug}/export/plaintext', 'ChapterExportController@plainText');
         Route::put('/{bookSlug}/chapter/{chapterSlug}/permissions', 'ChapterController@permissions');
         Route::get('/{bookSlug}/chapter/{chapterSlug}/delete', 'ChapterController@showDelete');
         Route::delete('/{bookSlug}/chapter/{chapterSlug}', 'ChapterController@destroy');
@@ -158,6 +156,9 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/search/chapter/{bookId}', 'SearchController@searchChapter');
     Route::get('/search/entity/siblings', 'SearchController@searchSiblings');
 
+    Route::get('/templates', 'PageTemplateController@list');
+    Route::get('/templates/{templateId}', 'PageTemplateController@get');
+
     // Other Pages
     Route::get('/', 'HomeController@index');
     Route::get('/home', 'HomeController@index');
@@ -171,6 +172,7 @@ Route::group(['middleware' => 'auth'], function () {
         // Maintenance
         Route::get('/maintenance', 'SettingController@showMaintenance');
         Route::delete('/maintenance/cleanup-images', 'SettingController@cleanupImages');
+        Route::post('/maintenance/send-test-email', 'SettingController@sendTestEmail');
 
         // Users
         Route::get('/users', 'UserController@index');
@@ -208,11 +210,15 @@ Route::get('/login', 'Auth\LoginController@getLogin');
 Route::post('/login', 'Auth\LoginController@login');
 Route::get('/logout', 'Auth\LoginController@logout');
 Route::get('/register', 'Auth\RegisterController@getRegister');
-Route::get('/register/confirm', 'Auth\RegisterController@getRegisterConfirmation');
-Route::get('/register/confirm/awaiting', 'Auth\RegisterController@showAwaitingConfirmation');
-Route::post('/register/confirm/resend', 'Auth\RegisterController@resendConfirmation');
-Route::get('/register/confirm/{token}', 'Auth\RegisterController@confirmEmail');
+Route::get('/register/confirm', 'Auth\ConfirmEmailController@show');
+Route::get('/register/confirm/awaiting', 'Auth\ConfirmEmailController@showAwaiting');
+Route::post('/register/confirm/resend', 'Auth\ConfirmEmailController@resend');
+Route::get('/register/confirm/{token}', 'Auth\ConfirmEmailController@confirm');
 Route::post('/register', 'Auth\RegisterController@postRegister');
+
+// User invitation routes
+Route::get('/register/invite/{token}', 'Auth\UserInviteController@showSetPassword');
+Route::post('/register/invite/{token}', 'Auth\UserInviteController@setPassword');
 
 // Password reset link request routes...
 Route::get('/password/email', 'Auth\ForgotPasswordController@showLinkRequestForm');

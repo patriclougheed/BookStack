@@ -1,6 +1,7 @@
 <?php namespace BookStack\Http\Controllers;
 
 use BookStack\Auth\User;
+use BookStack\Notifications\TestEmail;
 use BookStack\Uploads\ImageRepo;
 use BookStack\Uploads\ImageService;
 use Illuminate\Http\Request;
@@ -47,7 +48,7 @@ class SettingController extends Controller
      */
     public function update(Request $request)
     {
-        $this->preventAccessForDemoUsers();
+        $this->preventAccessInDemoMode();
         $this->checkPermission('settings-manage');
         $this->validate($request, [
             'app_logo' => $this->imageRepo->getImageValidationRules(),
@@ -76,7 +77,7 @@ class SettingController extends Controller
             setting()->remove('app-logo');
         }
 
-        session()->flash('success', trans('settings.settings_save_success'));
+        $this->showSuccessNotification(trans('settings.settings_save_success'));
         return redirect('/settings');
     }
 
@@ -111,15 +112,31 @@ class SettingController extends Controller
         $imagesToDelete = $imageService->deleteUnusedImages($checkRevisions, $dryRun);
         $deleteCount = count($imagesToDelete);
         if ($deleteCount === 0) {
-            session()->flash('warning', trans('settings.maint_image_cleanup_nothing_found'));
+            $this->showWarningNotification(trans('settings.maint_image_cleanup_nothing_found'));
             return redirect('/settings/maintenance')->withInput();
         }
 
         if ($dryRun) {
             session()->flash('cleanup-images-warning', trans('settings.maint_image_cleanup_warning', ['count' => $deleteCount]));
         } else {
-            session()->flash('success', trans('settings.maint_image_cleanup_success', ['count' => $deleteCount]));
+            $this->showSuccessNotification(trans('settings.maint_image_cleanup_success', ['count' => $deleteCount]));
         }
+
+        return redirect('/settings/maintenance#image-cleanup')->withInput();
+    }
+
+    /**
+     * Action to send a test e-mail to the current user.
+     * @param Request $request
+     * @param User $user
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
+     */
+    public function sendTestEmail(Request $request)
+    {
+        $this->checkPermission('settings-manage');
+
+        user()->notify(new TestEmail());
+        $this->showSuccessNotification(trans('settings.maint_send_test_email_success', ['address' => user()->email]));
 
         return redirect('/settings/maintenance#image-cleanup')->withInput();
     }

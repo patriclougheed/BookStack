@@ -15,15 +15,17 @@
 
         <div class="header-search hide-under-l">
             @if (hasAppAccess())
-            <form action="{{ url('/search') }}" method="GET" class="search-box">
-                <button id="header-search-box-button" type="submit">@icon('search') </button>
-                <input id="header-search-box-input" type="text" name="term" tabindex="2" placeholder="{{ trans('common.search') }}" value="{{ isset($searchTerm) ? $searchTerm : '' }}">
+            <form action="{{ url('/search') }}" method="GET" class="search-box" role="search">
+                <button id="header-search-box-button" type="submit" aria-label="{{ trans('common.search') }}" tabindex="-1">@icon('search') </button>
+                <input id="header-search-box-input" type="text" name="term"
+                       aria-label="{{ trans('common.search') }}" placeholder="{{ trans('common.search') }}"
+                       value="{{ isset($searchTerm) ? $searchTerm : '' }}">
             </form>
             @endif
         </div>
 
         <div class="text-right">
-            <div class="header-links">
+            <nav class="header-links" >
                 <div class="links text-center">
                     @if (hasAppAccess())
                         <a class="hide-over-l" href="{{ url('/search') }}">@icon('search'){{ trans('common.search') }}</a>
@@ -49,11 +51,12 @@
                 @if(signedInUser())
                     <?php $currentUser = user(); ?>
                     <div class="dropdown-container" dropdown>
-                        <span class="user-name hide-under-l" dropdown-toggle>
+                        <span class="user-name py-s hide-under-l" dropdown-toggle
+                              aria-haspopup="true" aria-expanded="false" aria-label="{{ trans('common.profile_menu') }}" tabindex="0">
                             <img class="avatar" src="{{$currentUser->getAvatar(30)}}" alt="{{ $currentUser->name }}">
                             <span class="name">{{ $currentUser->getShortName(9) }}</span> @icon('caret-down')
                         </span>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu" role="menu">
                             <li>
                                 <a href="{{ url("/user/{$currentUser->id}") }}">@icon('user'){{ trans('common.view_profile') }}</a>
                             </li>
@@ -66,7 +69,7 @@
                         </ul>
                     </div>
                 @endif
-            </div>
+            </nav>
         </div>
 
     </div>

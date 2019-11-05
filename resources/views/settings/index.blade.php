@@ -7,9 +7,10 @@
             <div class="py-m">
                 @include('settings.navbar', ['selected' => 'settings'])
             </div>
-            <div class="text-right mb-l px-m">
-                <br>
-                BookStack @if(strpos($version, 'v') !== 0) version @endif {{ $version }}
+            <div class="text-right p-m">
+                <a target="_blank" rel="noopener noreferrer" href="https://github.com/BookStackApp/BookStack/releases">
+                    BookStack @if(strpos($version, 'v') !== 0) version @endif {{ $version }}
+                </a>
             </div>
         </div>
 
@@ -72,7 +73,7 @@
                 </div>
 
                 <div class="form-group text-right">
-                    <button type="submit" class="button primary">{{ trans('settings.settings_save') }}</button>
+                    <button type="submit" class="button">{{ trans('settings.settings_save') }}</button>
                 </div>
             </form>
         </div>
@@ -135,7 +136,7 @@
                             <p class="small">{!! trans('settings.app_primary_color_desc') !!}</p>
                         </div>
                         <div setting-app-color-picker class="text-m-right">
-                            <input type="color" value="{{ setting('app-color') }}" name="setting-app-color" id="setting-app-color" placeholder="#0288D1">
+                            <input type="color" value="{{ setting('app-color') }}" name="setting-app-color" id="setting-app-color" placeholder="#206ea7">
                             <input type="hidden" value="{{ setting('app-color-light') }}" name="setting-app-color-light" id="setting-app-color-light">
                             <br>
                             <button type="button" class="text-button text-muted mt-s mx-s" setting-app-color-picker-reset>{{ trans('common.reset') }}</button>
@@ -173,7 +174,7 @@
                 </div>
 
                 <div class="form-group text-right">
-                    <button type="submit" class="button primary">{{ trans('settings.settings_save') }}</button>
+                    <button type="submit" class="button">{{ trans('settings.settings_save') }}</button>
                 </div>
             </form>
         </div>
@@ -236,7 +237,7 @@
                 </div>
 
                 <div class="form-group text-right">
-                    <button type="submit" class="button primary">{{ trans('settings.settings_save') }}</button>
+                    <button type="submit" class="button">{{ trans('settings.settings_save') }}</button>
                 </div>
             </form>
         </div>

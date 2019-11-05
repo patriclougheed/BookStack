@@ -25,7 +25,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         // Set root URL
-        URL::forceRootUrl(config('app.url'));
+        $appUrl = config('app.url');
+        if ($appUrl) {
+            $isHttps = (strpos($appUrl, 'https://') === 0);
+            URL::forceRootUrl($appUrl);
+            URL::forceScheme($isHttps ? 'https' : 'http');
+        }
 
         // Custom validation methods
         Validator::extend('image_extension', function ($attribute, $value, $parameters, $validator) {
@@ -43,7 +48,7 @@ class AppServiceProvider extends ServiceProvider
             return "<?php echo icon($expression); ?>";
         });
 
-        Blade::directive('exposeTranslations', function($expression) {
+        Blade::directive('exposeTranslations', function ($expression) {
             return "<?php \$__env->startPush('translations'); ?>" .
                 "<?php foreach({$expression} as \$key): ?>" .
                 '<meta name="translation" key="<?php echo e($key); ?>" value="<?php echo e(trans($key)); ?>">' . "\n" .

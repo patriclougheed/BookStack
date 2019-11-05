@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="@yield('body-class')">
+<html lang="{{ config('app.lang') }}" class="@yield('body-class')">
 <head>
     <title>{{ isset($pageTitle) ? $pageTitle . ' | ' : '' }}{{ setting('app-name') }}</title>
 
@@ -30,11 +30,11 @@
     @include('partials.notifications')
     @include('common.header')
 
-    <section id="content" class="block">
+    <div id="content" class="block">
         @yield('content')
-    </section>
+    </div>
 
-    <div back-to-top class="primary-background">
+    <div back-to-top class="primary-background print-hidden">
         <div class="inner">
             @icon('chevron-up') <span>{{ trans('common.back_to_top') }}</span>
         </div>

@@ -1,30 +1,35 @@
 <?php namespace BookStack\Http\Controllers;
 
 use BookStack\Auth\Access\SocialAuthService;
+use BookStack\Auth\Access\UserInviteService;
 use BookStack\Auth\User;
 use BookStack\Auth\UserRepo;
 use BookStack\Exceptions\UserUpdateException;
 use BookStack\Uploads\ImageRepo;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
 
     protected $user;
     protected $userRepo;
+    protected $inviteService;
     protected $imageRepo;
 
     /**
      * UserController constructor.
      * @param User $user
      * @param UserRepo $userRepo
+     * @param UserInviteService $inviteService
      * @param ImageRepo $imageRepo
      */
-    public function __construct(User $user, UserRepo $userRepo, ImageRepo $imageRepo)
+    public function __construct(User $user, UserRepo $userRepo, UserInviteService $inviteService, ImageRepo $imageRepo)
     {
         $this->user = $user;
         $this->userRepo = $userRepo;
+        $this->inviteService = $inviteService;
         $this->imageRepo = $imageRepo;
         parent::__construct();
     }
@@ -75,8 +80,10 @@ class UserController extends Controller
         ];
 
         $authMethod = config('auth.method');
-        if ($authMethod === 'standard') {
-            $validationRules['password'] = 'required|min:5';
+        $sendInvite = ($request->get('send_invite', 'false') === 'true');
+
+        if ($authMethod === 'standard' && !$sendInvite) {
+            $validationRules['password'] = 'required|min:6';
             $validationRules['password-confirm'] = 'required|same:password';
         } elseif ($authMethod === 'ldap') {
             $validationRules['external_auth_id'] = 'required';
@@ -86,12 +93,16 @@ class UserController extends Controller
         $user = $this->user->fill($request->all());
 
         if ($authMethod === 'standard') {
-            $user->password = bcrypt($request->get('password'));
+            $user->password = bcrypt($request->get('password', Str::random(32)));
         } elseif ($authMethod === 'ldap') {
             $user->external_auth_id = $request->get('external_auth_id');
         }
 
         $user->save();
+
+        if ($sendInvite) {
+            $this->inviteService->sendInvitation($user);
+        }
 
         if ($request->filled('roles')) {
             $roles = $request->get('roles');
@@ -133,13 +144,13 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $this->preventAccessForDemoUsers();
+        $this->preventAccessInDemoMode();
         $this->checkPermissionOrCurrentUser('users-manage', $id);
 
         $this->validate($request, [
             'name'             => 'min:2',
             'email'            => 'min:2|email|unique:users,email,' . $id,
-            'password'         => 'min:5|required_with:password_confirm',
+            'password'         => 'min:6|required_with:password_confirm',
             'password-confirm' => 'same:password|required_with:password',
             'setting'          => 'array',
             'profile_image'    => $this->imageRepo->getImageValidationRules(),
@@ -166,7 +177,7 @@ class UserController extends Controller
         }
 
         // External auth id updates
-        if ($this->currentUser->can('users-manage') && $request->filled('external_auth_id')) {
+        if (user()->can('users-manage') && $request->filled('external_auth_id')) {
             $user->external_auth_id = $request->get('external_auth_id');
         }
 
@@ -191,7 +202,7 @@ class UserController extends Controller
         }
 
         $user->save();
-        session()->flash('success', trans('settings.users_edit_success'));
+        $this->showSuccessNotification(trans('settings.users_edit_success'));
 
         $redirectUrl = userCan('users-manage') ? '/settings/users' : ('/settings/users/' . $user->id);
         return redirect($redirectUrl);
@@ -219,23 +230,23 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-        $this->preventAccessForDemoUsers();
+        $this->preventAccessInDemoMode();
         $this->checkPermissionOrCurrentUser('users-manage', $id);
 
         $user = $this->userRepo->getById($id);
 
         if ($this->userRepo->isOnlyAdmin($user)) {
-            session()->flash('error', trans('errors.users_cannot_delete_only_admin'));
+            $this->showErrorNotification(trans('errors.users_cannot_delete_only_admin'));
             return redirect($user->getEditUrl());
         }
 
         if ($user->system_name === 'public') {
-            session()->flash('error', trans('errors.users_cannot_delete_guest'));
+            $this->showErrorNotification(trans('errors.users_cannot_delete_guest'));
             return redirect($user->getEditUrl());
         }
 
         $this->userRepo->destroy($user);
-        session()->flash('success', trans('settings.users_delete_success'));
+        $this->showSuccessNotification(trans('settings.users_delete_success'));
 
         return redirect('/settings/users');
     }
@@ -250,7 +261,7 @@ class UserController extends Controller
         $user = $this->userRepo->getById($id);
 
         $userActivity = $this->userRepo->getActivity($user);
-        $recentlyCreated = $this->userRepo->getRecentlyCreated($user, 5, 0);
+        $recentlyCreated = $this->userRepo->getRecentlyCreated($user, 5);
         $assetCounts = $this->userRepo->getAssetCounts($user);
 
         return view('users.profile', [
@@ -263,22 +274,22 @@ class UserController extends Controller
 
     /**
      * Update the user's preferred book-list display setting.
-     * @param $id
      * @param Request $request
+     * @param $id
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function switchBookView($id, Request $request)
+    public function switchBookView(Request $request, $id)
     {
         return $this->switchViewType($id, $request, 'books');
     }
 
     /**
      * Update the user's preferred shelf-list display setting.
-     * @param $id
      * @param Request $request
+     * @param $id
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function switchShelfView($id, Request $request)
+    public function switchShelfView(Request $request, $id)
     {
         return $this->switchViewType($id, $request, 'bookshelves');
     }
@@ -308,12 +319,12 @@ class UserController extends Controller
 
     /**
      * Change the stored sort type for a particular view.
+     * @param Request $request
      * @param string $id
      * @param string $type
-     * @param Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function changeSort(string $id, string $type, Request $request)
+    public function changeSort(Request $request, string $id, string $type)
     {
         $validSortTypes = ['books', 'bookshelves'];
         if (!in_array($type, $validSortTypes)) {
@@ -324,12 +335,12 @@ class UserController extends Controller
 
     /**
      * Update the stored section expansion preference for the given user.
+     * @param Request $request
      * @param string $id
      * @param string $key
-     * @param Request $request
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
      */
-    public function updateExpansionPreference(string $id, string $key, Request $request)
+    public function updateExpansionPreference(Request $request, string $id, string $key)
     {
         $this->checkPermissionOrCurrentUser('users-manage', $id);
         $keyWhitelist = ['home-details'];

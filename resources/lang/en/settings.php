@@ -63,6 +63,13 @@ return [
     'maint_image_cleanup_warning' => ':count potentially unused images were found. Are you sure you want to delete these images?',
     'maint_image_cleanup_success' => ':count potentially unused images found and deleted!',
     'maint_image_cleanup_nothing_found' => 'No unused images found, Nothing deleted!',
+    'maint_send_test_email' => 'Send a Test Email',
+    'maint_send_test_email_desc' => 'This sends a test email to your email address specified in your profile.',
+    'maint_send_test_email_run' => 'Send test email',
+    'maint_send_test_email_success' => 'Email sent to :address',
+    'maint_send_test_email_mail_subject' => 'Test Email',
+    'maint_send_test_email_mail_greeting' => 'Email delivery seems to work!',
+    'maint_send_test_email_mail_text' => 'Congratulations! As you received this email notification, your email settings seem to be configured properly.',
 
     // Role Settings
     'roles' => 'Roles',
@@ -85,6 +92,7 @@ return [
     'role_manage_roles' => 'Manage roles & role permissions',
     'role_manage_entity_permissions' => 'Manage all book, chapter & page permissions',
     'role_manage_own_entity_permissions' => 'Manage permissions on own book, chapter & pages',
+    'role_manage_page_templates' => 'Manage page templates',
     'role_manage_settings' => 'Manage app settings',
     'role_asset' => 'Asset Permissions',
     'role_asset_desc' => 'These permissions control default access to the assets within the system. Permissions on Books, Chapters and Pages will override these permissions.',
@@ -108,7 +116,9 @@ return [
     'users_role' => 'User Roles',
     'users_role_desc' => 'Select which roles this user will be assigned to. If a user is assigned to multiple roles the permissions from those roles will stack and they will receive all abilities of the assigned roles.',
     'users_password' => 'User Password',
-    'users_password_desc' => 'Set a password used to log-in to the application. This must be at least 5 characters long.',
+    'users_password_desc' => 'Set a password used to log-in to the application. This must be at least 6 characters long.',
+    'users_send_invite_text' => 'You can choose to send this user an invitation email which allows them to set their own password otherwise you can set their password yourself.',
+    'users_send_invite_option' => 'Send user invite email',
     'users_external_auth_id' => 'External Authentication ID',
     'users_external_auth_id_desc' => 'This is the ID used to match this user when communicating with your LDAP system.',
     'users_password_warning' => 'Only fill the below if you would like to change your password.',
@@ -132,9 +142,8 @@ return [
     'users_social_connected' => ':socialAccount account was successfully attached to your profile.',
     'users_social_disconnected' => ':socialAccount account was successfully disconnected from your profile.',
 
-    //! Since these labels are already localized this array does not need to be
-    //! translated in the language-specific files.
-    //! DELETE BELOW IF COPIED FROM EN
+    //! If editing translations files directly please ignore this in all
+    //! languages apart from en. Content will be auto-copied from en.
     //!////////////////////////////////
     'language_select' => [
         'en' => 'English',
@@ -149,15 +158,16 @@ return [
         'sk' => 'Slovensky',
         'cs' => 'Česky',
         'sv' => 'Svenska',
-        'kr' => '한국어',
+        'ko' => '한국어',
         'ja' => '日本語',
         'pl' => 'Polski',
         'it' => 'Italian',
         'ru' => 'Русский',
         'uk' => 'Українська',
         'zh_CN' => '简体中文',
-	'zh_TW' => '繁體中文',
-	'hu' => 'Magyar'
+        'zh_TW' => '繁體中文',
+        'hu' => 'Magyar',
+        'tr' => 'Türkçe',
     ]
     //!////////////////////////////////
 ];

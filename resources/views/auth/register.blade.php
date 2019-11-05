@@ -6,7 +6,7 @@
         <div class="my-l">&nbsp;</div>
 
         <div class="card content-wrap auto-height">
-            <h1 class="list-heading">{{ title_case(trans('auth.sign_up')) }}</h1>
+            <h1 class="list-heading">{{ Str::title(trans('auth.sign_up')) }}</h1>
 
             <form action="{{ url("/register") }}" method="POST" class="mt-l stretch-inputs">
                 {!! csrf_field() !!}
@@ -31,7 +31,7 @@
                         <a href="{{ url('/login') }}">{{ trans('auth.already_have_account') }}</a>
                     </div>
                     <div class="from-group text-right">
-                        <button class="button primary">{{ trans('auth.create_account') }}</button>
+                        <button class="button">{{ trans('auth.create_account') }}</button>
                     </div>
                 </div>
 
